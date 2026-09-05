@@ -65,9 +65,9 @@ h1 { margin: 0; font-size: clamp(2.2rem, 7vw, 4rem); line-height: .95; letter-sp
 .task-item { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 10px 9px 14px; border: 1px solid transparent; border-radius: 4px; background: #fff; transition: border-color .2s, transform .2s; }
 .task-item:hover { border-color: var(--line); transform: translateX(2px); }
 .task-check { width: 20px; height: 20px; flex: 0 0 auto; margin: 0; accent-color: var(--green); cursor: pointer; }
-.task-content { min-width: 0; flex: 1; }
+.task-content { display: flex; min-width: 0; flex: 1; align-items: baseline; gap: 12px; }
 .task-text { display: block; overflow-wrap: anywhere; font-size: 14px; line-height: 1.5; }
-.task-date { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+.task-date { flex: 0 0 auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .task-item.is-completed .task-text { color: #a1a8a4; text-decoration: line-through; }
 .task-item.is-completed .task-date { color: #b5bbb7; }
 .task-actions { display: flex; gap: 2px; }
