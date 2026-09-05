@@ -2,6 +2,7 @@ const STORAGE_KEY = "daily-tasks";
 
 const taskForm = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
+const taskDateInput = document.querySelector("#task-date");
 const taskList = document.querySelector("#task-list");
 const emptyState = document.querySelector("#empty-state");
 const emptyTitle = document.querySelector("#empty-title");
@@ -50,15 +51,25 @@ function renderTasks() {
 function createTaskMarkup(task) {
   const completedClass = task.completed ? " is-completed" : "";
   const checked = task.completed ? " checked" : "";
+  const dateText = task.date ? formatDate(task.date) : "日付未設定";
   return `
     <li class="task-item${completedClass}" data-id="${task.id}">
       <input class="task-check" type="checkbox"${checked} aria-label="${escapeHtml(task.text)}を完了にする">
-      <span class="task-text">${escapeHtml(task.text)}</span>
+      <div class="task-content">
+        <span class="task-text">${escapeHtml(task.text)}</span>
+        <time class="task-date" datetime="${task.date || ""}">${dateText}</time>
+      </div>
       <div class="task-actions">
         <button class="icon-button edit" type="button" aria-label="${escapeHtml(task.text)}を編集">✎</button>
         <button class="icon-button delete" type="button" aria-label="${escapeHtml(task.text)}を削除">×</button>
       </div>
     </li>`;
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return "日付未設定";
+  const [year, month, day] = dateValue.split("-");
+  return `${year}年${Number(month)}月${Number(day)}日`;
 }
 
 function escapeHtml(text) {
@@ -67,8 +78,8 @@ function escapeHtml(text) {
   }[character]));
 }
 
-function addTask(text) {
-  tasks.unshift({ id: Date.now().toString(), text, completed: false });
+function addTask(text, date) {
+  tasks.unshift({ id: Date.now().toString(), text, date, completed: false });
   saveTasks();
   renderTasks();
 }
@@ -82,9 +93,11 @@ function updateTask(id, updates) {
 taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const text = taskInput.value.trim();
-  if (!text) return;
-  addTask(text);
+  const date = taskDateInput.value;
+  if (!text || !date) return;
+  addTask(text, date);
   taskInput.value = "";
+  taskDateInput.value = getTodayString();
   taskInput.focus();
 });
 
@@ -112,27 +125,36 @@ taskList.addEventListener("click", (event) => {
 
 function startEditing(taskItem, taskId) {
   const task = tasks.find((item) => item.id === taskId);
-  const textElement = taskItem.querySelector(".task-text");
+  const content = taskItem.querySelector(".task-content");
   const actions = taskItem.querySelector(".task-actions");
-  const input = document.createElement("input");
-  input.className = "edit-input";
-  input.value = task.text;
-  input.maxLength = 100;
-  textElement.replaceWith(input);
+  const editFields = document.createElement("div");
+  editFields.className = "edit-fields";
+  editFields.innerHTML = `<input class="edit-input edit-text" type="text" maxlength="100" value="${escapeHtml(task.text)}"><input class="edit-input edit-date" type="date" value="${task.date || getTodayString()}">`;
+  content.replaceWith(editFields);
   actions.innerHTML = '<button class="icon-button save" type="button" aria-label="変更を保存">✓</button><button class="icon-button cancel" type="button" aria-label="編集をキャンセル">↩</button>';
-  input.focus();
+  const textInput = editFields.querySelector(".edit-text");
+  const dateInput = editFields.querySelector(".edit-date");
+  textInput.focus();
 
   const finishEditing = (save) => {
-    const nextText = input.value.trim();
-    if (save && nextText) updateTask(taskId, { text: nextText });
+    const nextText = textInput.value.trim();
+    if (save && nextText && dateInput.value) updateTask(taskId, { text: nextText, date: dateInput.value });
     else renderTasks();
   };
   actions.querySelector(".save").addEventListener("click", () => finishEditing(true));
   actions.querySelector(".cancel").addEventListener("click", () => finishEditing(false));
-  input.addEventListener("keydown", (event) => {
+  textInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") finishEditing(true);
     if (event.key === "Escape") finishEditing(false);
   });
+}
+
+function getTodayString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 filterButtons.forEach((button) => {
@@ -151,4 +173,5 @@ clearCompletedButton.addEventListener("click", () => {
 
 const today = new Date();
 document.querySelector("#today-date").innerHTML = `<strong>${today.toLocaleDateString("ja-JP", { month: "short", day: "numeric" })}</strong>${today.toLocaleDateString("ja-JP", { weekday: "long" })}`;
+taskDateInput.value = getTodayString();
 renderTasks();
